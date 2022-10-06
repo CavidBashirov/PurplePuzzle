@@ -2,6 +2,7 @@
 using EntityFrameworkProject.Models;
 using EntityFrameworkProject.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -18,16 +19,23 @@ namespace EntityFrameworkProject.Controllers
         {
             _context = context;
         }
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            IEnumerable<Slider> sliders = await _context.Sliders.ToListAsync();
+            SliderDetail sliderDetail = await _context.SliderDetails.FirstOrDefaultAsync();
+            IEnumerable<Category> categories = await _context.Categories.Where(m => m.IsDeleted == false).ToListAsync();
+            IEnumerable<Product> products = await _context.Products
+                .Where(m => m.IsDeleted == false)
+                .Include(m => m.Category)
+                .Include(m => m.ProductImages).ToListAsync();
 
-            List<Slider> sliders = _context.Sliders.ToList();
-            SliderDetail sliderDetail = _context.SliderDetails.FirstOrDefault();
 
             HomeVM model = new HomeVM
             {
                 Sliders = sliders,
-                SliderDetail = sliderDetail
+                SliderDetail = sliderDetail,
+                Categories = categories,
+                Products = products
             };
 
             return View(model);
